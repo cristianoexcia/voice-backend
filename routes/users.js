@@ -25,4 +25,5 @@ router.put('/:id', auth, updateUser)
 
 router.delete('/:id', auth, deleteUser)
 
+
 export default router
