@@ -10,7 +10,7 @@ import multer from 'multer';
 import path from 'path';
 const app = express()
 
-const storage = multer.diskStorage({
+/*const storage = multer.diskStorage({
 
   destination: function (
     req,
@@ -19,6 +19,31 @@ const storage = multer.diskStorage({
   ) {
 
     cb(null, 'uploads/');
+  },
+
+  filename: function (
+    req,
+    file,
+    cb
+  ) {
+
+    const unique =
+      Date.now() +
+      path.extname(file.originalname);
+
+    cb(null, unique);
+  }
+});*/
+
+const storage = multer.diskStorage({
+
+  destination: function (
+    req,
+    file,
+    cb
+  ) {
+
+    cb(null, '/tmp');
   },
 
   filename: function (
@@ -48,8 +73,7 @@ app.get('/', (req, res) => {
   res.send('API funcionando')
 })
 
-app.post(
-  '/voice/upload',
+app.post('/voice/upload',
 
   upload.single('audio'),
 
@@ -74,7 +98,7 @@ app.post(
 
       return res.status(500).json({
 
-        error: 'Erro upload 3'
+        error: 'Erro upload 4'
       });
     }
   }
