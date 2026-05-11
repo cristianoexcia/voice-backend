@@ -6,8 +6,8 @@ import userRoutes from './routes/users.js'
 
 dotenv.config()
 
-const multer = require('multer');
-const path = require('path');
+import multer from 'multer';
+import path from 'path';
 const app = express()
 
 const storage = multer.diskStorage({
@@ -74,7 +74,7 @@ app.post(
 
       return res.status(500).json({
 
-        error: 'Erro upload 2'
+        error: 'Erro upload 3'
       });
     }
   }
