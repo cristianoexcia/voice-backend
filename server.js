@@ -34,11 +34,42 @@ async function searchWeb(query) {
     const response =
     await axios.get(url);
 
-    return (
-      response.data.AbstractText ||
-      response.data.Heading ||
-      'Sem resultados'
-    );
+    const data = response.data;
+
+    let result = '';
+
+    if (data.AbstractText) {
+
+      result +=
+      `Resumo: ${data.AbstractText}\n`;
+    }
+
+    if (
+      data.RelatedTopics &&
+      data.RelatedTopics.length > 0
+    ) {
+
+      result += '\nTópicos relacionados:\n';
+
+      data.RelatedTopics
+        .slice(0, 5)
+        .forEach((item) => {
+
+          if (item.Text) {
+
+            result +=
+            `- ${item.Text}\n`;
+          }
+        });
+    }
+
+    if (!result) {
+
+      result =
+      'Nenhum resultado encontrado';
+    }
+
+    return result;
 
   } catch (err) {
 
@@ -111,13 +142,22 @@ app.post('/voice/upload',
         messages: [
           {
             role: 'user',
-            content:`Pergunta:
-              ${userText}
+            content:
+            `
+            Você é um assistente de voz inteligente.
 
-              Contexto web:
-              ${webContext}
+            Pergunta do usuário:
+            ${userText}
 
-              Responda em português.
+            Resultado da busca web:
+            ${webContext}
+
+            INSTRUÇÕES:
+            - Responda em português do Brasil
+            - Use o contexto web acima
+            - Se houver pouca informação web, responda usando seu conhecimento
+            - Não diga para pesquisar no Google
+            - Seja objetivo e natural
             `
           }
         ]
