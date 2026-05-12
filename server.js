@@ -24,6 +24,158 @@ const anthropic = new Anthropic({
   process.env.ANTHROPIC_API_KEY
 });
 
+function detectIntent(text) {
+
+  const lower =
+  text.toLowerCase();
+
+  if (
+
+    lower.includes('dólar') ||
+    lower.includes('dolar') ||
+    lower.includes('euro') ||
+    lower.includes('cotação') ||
+    lower.includes('cotacao')
+
+  ) {
+
+    return 'finance';
+  }
+
+  if (
+
+    lower.includes('clima') ||
+    lower.includes('temperatura') ||
+    lower.includes('chuva') ||
+    lower.includes('tempo')
+
+  ) {
+
+    return 'weather';
+  }
+
+  if (
+
+    lower.includes('soja') ||
+    lower.includes('milho') ||
+    lower.includes('boi') ||
+    lower.includes('gado') ||
+    lower.includes('agronegócio') ||
+    lower.includes('agro')
+
+  ) {
+
+    return 'agro';
+  }
+
+  if (
+
+    lower.includes('trânsito') ||
+    lower.includes('transito') ||
+    lower.includes('rodovia') ||
+    lower.includes('br-101') ||
+    lower.includes('rota') ||
+    lower.includes('acidente')
+
+  ) {
+
+    return 'traffic';
+  }
+
+  return 'general';
+}
+
+async function getDollarRate() {
+
+  try {
+
+    const response =
+    await axios.get(
+      'https://economia.awesomeapi.com.br/json/last/USD-BRL'
+    );
+
+    return `
+Cotação atual do dólar:
+R$ ${response.data.USDBRL.bid}
+`;
+  }
+
+  catch (err) {
+
+    console.log(err);
+
+    return 'Erro cotação dólar';
+  }
+}
+
+async function getWeather() {
+
+  try {
+
+    const response =
+    await axios.get(
+
+'https://api.open-meteo.com/v1/forecast?latitude=-26.91&longitude=-48.66&current_weather=true'
+
+    );
+
+    const weather =
+    response.data.current_weather;
+
+    return `
+Temperatura atual:
+${weather.temperature}°C
+
+Vento:
+${weather.windspeed} km/h
+`;
+
+  } catch (err) {
+
+    console.log(err);
+
+    return 'Erro clima';
+  }
+}
+
+async function getAgroInfo(text) {
+
+  try {
+
+    const result =
+    await searchWeb(
+      `agronegócio ${text}`
+    );
+
+    return result;
+
+  } catch (err) {
+
+    console.log(err);
+
+    return 'Erro agro';
+  }
+}
+
+async function getTrafficInfo(text) {
+
+  try {
+
+    const result =
+    await searchWeb(
+      `trânsito ${text}`
+    );
+
+    return result;
+
+  } catch (err) {
+
+    console.log(err);
+
+    return 'Erro trânsito';
+  }
+}
+
 async function searchWeb(query) {
 
   try {
@@ -133,8 +285,39 @@ app.post('/voice/upload',
       console.log('transcrição',transcription.text);
       
       const userText = transcription.text;
-      const webContext = await searchWeb(userText);
-      console.log(webContext);
+
+      const intent = detectIntent(userText);
+
+      console.log(intent);
+
+      let webContext = '';
+
+      if (intent === 'finance') {
+        webContext = await getDollarRate();
+      }
+
+      else if (
+        intent === 'weather'
+      ) {
+        webContext = await getWeather();
+      }
+
+      else if (
+        intent === 'agro'
+      ) {
+        webContext = await getAgroInfo(userText);
+      }
+
+      else if (
+        intent === 'traffic'
+      ) {
+        webContext = await getTrafficInfo(userText);
+      }
+
+      else {
+        webContext = await searchWeb(userText);
+      }
+
 
       const msg =  await anthropic.messages.create({
         model:'claude-sonnet-4-6',
@@ -144,20 +327,26 @@ app.post('/voice/upload',
             role: 'user',
             content:
             `
-            Você é um assistente de voz inteligente.
+            Você é um assistente de voz inteligente especializado em:
+
+            - agronegócio
+            - clima
+            - trânsito
+            - logística
+            - informações gerais
 
             Pergunta do usuário:
             ${userText}
 
-            Resultado da busca web:
+            Contexto:
             ${webContext}
 
             INSTRUÇÕES:
             - Responda em português do Brasil
-            - Use o contexto web acima
-            - Se houver pouca informação web, responda usando seu conhecimento
+            - Seja natural
+            - Seja útil
             - Não diga para pesquisar no Google
-            - Seja objetivo e natural
+            - Responda como um assistente de voz moderno
             `
           }
         ]
