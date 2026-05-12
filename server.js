@@ -6,6 +6,7 @@ import fs from 'fs';
 import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
 
+
 import userRoutes from './routes/users.js'
 
 dotenv.config()
@@ -13,6 +14,8 @@ dotenv.config()
 import multer from 'multer';
 import path from 'path';
 const app = express()
+
+app.use(express.static('/tmp'));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -25,190 +28,122 @@ const anthropic = new Anthropic({
 });
 
 function detectIntent(text) {
-
-  const lower =
-  text.toLowerCase();
-
+  const lower = text.toLowerCase();
   if (
-
     lower.includes('dólar') ||
     lower.includes('dolar') ||
     lower.includes('euro') ||
     lower.includes('cotação') ||
-    lower.includes('cotacao')
-
-  ) {
+    lower.includes('cotacao')) {
 
     return 'finance';
   }
 
   if (
-
     lower.includes('clima') ||
     lower.includes('temperatura') ||
     lower.includes('chuva') ||
-    lower.includes('tempo')
-
-  ) {
-
+    lower.includes('tempo')) {
     return 'weather';
   }
 
   if (
-
     lower.includes('soja') ||
     lower.includes('milho') ||
     lower.includes('boi') ||
     lower.includes('gado') ||
     lower.includes('agronegócio') ||
-    lower.includes('agro')
-
-  ) {
-
+    lower.includes('agro')) {
     return 'agro';
   }
 
   if (
-
     lower.includes('trânsito') ||
     lower.includes('transito') ||
     lower.includes('rodovia') ||
-    lower.includes('br-101') ||
+    lower.includes('BR') ||
     lower.includes('rota') ||
-    lower.includes('acidente')
-
-  ) {
-
+    lower.includes('acidente')) {
     return 'traffic';
   }
-
   return 'general';
 }
 
 async function getDollarRate() {
-
   try {
-
-    const response =
-    await axios.get(
-      'https://economia.awesomeapi.com.br/json/last/USD-BRL'
-    );
-
+    const response = await axios.get('https://economia.awesomeapi.com.br/json/last/USD-BRL');
     return `
-Cotação atual do dólar:
-R$ ${response.data.USDBRL.bid}
-`;
+      Cotação atual do dólar:
+      R$ ${response.data.USDBRL.bid}
+      `;
   }
-
   catch (err) {
-
     console.log(err);
-
     return 'Erro cotação dólar';
   }
 }
 
 async function getWeather() {
-
   try {
-
-    const response =
-    await axios.get(
-
-'https://api.open-meteo.com/v1/forecast?latitude=-26.91&longitude=-48.66&current_weather=true'
-
-    );
-
-    const weather =
-    response.data.current_weather;
-
+    const response = await axios.get('https://api.open-meteo.com/v1/forecast?latitude=-26.91&longitude=-48.66&current_weather=true');
+    const weather = response.data.current_weather;
     return `
-Temperatura atual:
-${weather.temperature}°C
+      Temperatura atual:
+      ${weather.temperature}°C
 
-Vento:
-${weather.windspeed} km/h
-`;
-
-  } catch (err) {
-
-    console.log(err);
-
-    return 'Erro clima';
-  }
-}
+      Vento:
+      ${weather.windspeed} km/h
+    `;
+      } catch (err) {
+        console.log(err);
+        return 'Erro clima';
+      }
+    }
 
 async function getAgroInfo(text) {
-
   try {
-
-    const result =
-    await searchWeb(
+    const result = await searchWeb(
       `agronegócio ${text}`
     );
-
     return result;
-
   } catch (err) {
-
     console.log(err);
-
     return 'Erro agro';
   }
 }
 
 async function getTrafficInfo(text) {
-
   try {
-
     const result =
     await searchWeb(
       `trânsito ${text}`
     );
-
     return result;
-
   } catch (err) {
-
     console.log(err);
-
     return 'Erro trânsito';
   }
 }
 
 async function searchWeb(query) {
-
   try {
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`;
 
-    const url =
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`;
-
-    const response =
-    await axios.get(url);
-
+    const response = await axios.get(url);
     const data = response.data;
-
     let result = '';
-
     if (data.AbstractText) {
-
       result +=
       `Resumo: ${data.AbstractText}\n`;
     }
 
-    if (
-      data.RelatedTopics &&
-      data.RelatedTopics.length > 0
+    if (data.RelatedTopics && data.RelatedTopics.length > 0
     ) {
-
       result += '\nTópicos relacionados:\n';
-
       data.RelatedTopics
         .slice(0, 5)
         .forEach((item) => {
-
           if (item.Text) {
-
             result +=
             `- ${item.Text}\n`;
           }
@@ -216,29 +151,23 @@ async function searchWeb(query) {
     }
 
     if (!result) {
-
-      result =
-      'Nenhum resultado encontrado';
+      result = 'Nenhum resultado encontrado';
     }
 
     return result;
 
   } catch (err) {
-
     console.log(err);
-
     return 'Erro busca web';
   }
 }
 
 const storage = multer.diskStorage({
-
   destination: function (
     req,
     file,
     cb
   ) {
-
     cb(null, '/tmp');
   },
 
@@ -247,11 +176,7 @@ const storage = multer.diskStorage({
     file,
     cb
   ) {
-
-    const unique =
-      Date.now() +
-      path.extname(file.originalname);
-
+    const unique = Date.now() + path.extname(file.originalname);
     cb(null, unique);
   }
 });
@@ -262,62 +187,117 @@ const upload = multer({
 
 app.use(cors())
 app.use(express.json())
-
 app.use('/users', userRoutes)
-
 app.get('/', (req, res) => {
   res.send('API funcionando')
 })
 
-app.post('/voice/upload',
-
-  upload.single('audio'),
-
+app.post('/voice/text',
   async (req, res) => {
+    try {
+      const {
+        question
+      } = req.body;
 
+      const intent = detectIntent(question);
+      let webContext = '';
+      if (intent === 'finance') {
+        webContext = await getDollarRate();
+      }
+
+      else if (intent === 'weather') {
+        webContext =
+        await getWeather();
+      }
+      else {
+        webContext = await searchWeb(question);
+      }
+
+      const msg = await anthropic.messages.create({
+        model:'claude-sonnet-4-6',
+        max_tokens: 500,
+        messages: [
+          {
+            role: 'user',
+            content:
+            `
+            Pergunta:
+            ${question}
+
+            Contexto:
+            ${webContext}
+
+            Responda em português.
+            `
+          }
+        ]
+      });
+
+      const answer = msg.content[0].text;
+      const speechFile = `/tmp/${Date.now()}.mp3`;
+      const mp3 = await openai.audio.speech.create({
+        model: 'tts-1',
+        voice: 'nova',
+        input: answer
+      });
+
+      const buffer = Buffer.from(await mp3.arrayBuffer());
+
+      fs.writeFileSync(
+        speechFile,
+        buffer
+      );
+
+      return res.json({
+        success: true,
+        answer,
+        audioUrl:`${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
+      });
+
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        error: err.message
+      });
+    }
+  }
+);
+
+app.post('/voice/upload',
+  upload.single('audio'),
+  async (req, res) => {
     try {
       console.log('file:',req.file);
       const transcription =  await openai.audio.transcriptions.create({
         file: fs.createReadStream(req.file.path),
         model: 'whisper-1'
       });
-
-      console.log('transcrição',transcription.text);
-      
+      console.log('transcrição',transcription.text);  
       const userText = transcription.text;
-
       const intent = detectIntent(userText);
-
       console.log(intent);
-
       let webContext = '';
-
       if (intent === 'finance') {
         webContext = await getDollarRate();
       }
-
       else if (
         intent === 'weather'
       ) {
         webContext = await getWeather();
-      }
-
+      }    
       else if (
         intent === 'agro'
       ) {
         webContext = await getAgroInfo(userText);
       }
-
       else if (
         intent === 'traffic'
       ) {
         webContext = await getTrafficInfo(userText);
       }
-
       else {
         webContext = await searchWeb(userText);
       }
-
 
       const msg =  await anthropic.messages.create({
         model:'claude-sonnet-4-6',
@@ -355,12 +335,30 @@ app.post('/voice/upload',
       const answer = msg.content[0].text;
       console.log(answer);
 
-      return res.json({
-        success: true,
-        transcription: userText,
-        answer
-      });
+      const speechFile =
+        `/tmp/${Date.now()}.mp3`;
 
+        const mp3 =
+        await openai.audio.speech.create({
+          model: 'tts-1',
+          voice: 'nova',
+          input: answer
+        });
+
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+
+        fs.writeFileSync(
+          speechFile,
+          buffer
+        );
+
+        return res.json({
+          success: true,
+          transcription: userText,
+          answer,
+          audioUrl:
+        `${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
+        });
     } catch (err) {
       console.log(err);
       return res.status(500).json({
