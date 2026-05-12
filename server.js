@@ -61,45 +61,23 @@ app.post('/voice/upload',
   async (req, res) => {
 
     try {
-
-      console.log(req.file);
-
-      /*return res.json({
-
-        success: true,
-
-        file: req.file.filename,
-
-        path: req.file.path
-      });*/
-      const transcription =
-      await openai.audio.transcriptions.create({
-
-        file: fs.createReadStream(
-          req.file.path
-        ),
-
+      console.log('file:',req.file);
+      const transcription =  await openai.audio.transcriptions.create({
+        file: fs.createReadStream(req.file.path),
         model: 'whisper-1'
       });
 
-      console.log(
-        transcription.text
-      );
+      console.log('transcrição',transcription.text);
 
       return res.json({
-
         success: true,
-
         text: transcription.text
       });
 
     } catch (err) {
-
       console.log(err);
-
       return res.status(500).json({
-
-        error: 'Erro upload 5'
+        error: 'Erro upload 7'
       });
     }
   }
