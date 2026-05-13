@@ -368,7 +368,8 @@ app.post('/voice/upload',
         ]
       });
 
-      const answer = msg.content[0].text;
+      //const answer = msg.content[0].text;
+      const answer = msg.text;
       console.log(answer);
 
       const uploadsPath = path.join(process.cwd(), 'uploads');
@@ -425,6 +426,7 @@ app.post('/voice/upload',
       } catch (err) {
         console.log(err);      
       }finally{
+        console.log('answer',answer);
         return res.json({
           success: true,
           transcription:
