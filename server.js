@@ -16,7 +16,7 @@ import path from 'path';
 const app = express()
 
 app.use('/tmp',express.static('/tmp'));
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads', express.static('/uploads'));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -287,7 +287,7 @@ app.post('/voice/text',
         transcription:
         userText,
         answer,
-        audioUrl: `${req.protocol}://${req.get('host')}/uploads/${fileName}`
+        audioUrl: `${req.protocol}://${req.get('host')}//tmp/${fileName}`
       });
 
     } catch (err) {
