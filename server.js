@@ -256,7 +256,7 @@ app.post('/voice/text',
         audioUrl:`${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
       });*/
       const fileName = `${Date.now()}.mp3`;
-      const speechFile = path.join(uploadsPath, fileName);
+      const speechFile = `/tmp/${Date.now()}.mp3`;
       const response = await axios({
         method: 'POST',
         url:'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB',
