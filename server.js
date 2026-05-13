@@ -376,9 +376,9 @@ app.post('/voice/upload',
         fs.mkdirSync(uploadsPath);
       }
 
-      const speechFile = `/uploads/${Date.now()}.mp3`;
+      /*const speechFile = `/uploads/${Date.now()}.mp3`;
 
-      /*const mp3 = await openai.audio.speech.create({
+      const mp3 = await openai.audio.speech.create({
         model: 'tts-1',
         voice: 'nova',
         input: answer
