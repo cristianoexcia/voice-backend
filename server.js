@@ -15,7 +15,8 @@ import multer from 'multer';
 import path from 'path';
 const app = express()
 
-app.use(express.static('/tmp'));
+app.use('/tmp',express.static('/tmp'));
+app.use('/uploads', express.static(uploadsPath));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -234,7 +235,8 @@ app.post('/voice/text',
       });
 
       const answer = msg.content[0].text;
-      const speechFile = `/tmp/${Date.now()}.mp3`;
+
+      /*const speechFile = `/tmp/${Date.now()}.mp3`;
       const mp3 = await openai.audio.speech.create({
         model: 'tts-1',
         voice: 'nova',
@@ -247,11 +249,45 @@ app.post('/voice/text',
         speechFile,
         buffer
       );
-
+      console.log('audiourl',`${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`)
       return res.json({
         success: true,
         answer,
         audioUrl:`${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
+      });*/
+      const fileName = `${Date.now()}.mp3`;
+      const speechFile = path.join(uploadsPath, fileName);
+      const response = await axios({
+        method: 'POST',
+        url:'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB',
+        headers: {
+          'xi-api-key':process.env.ELEVEN_API_KEY,
+          'Content-Type':
+          'application/json'
+        },
+        data: {
+          text: answer,
+          model_id:'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.8
+          }
+        },
+        responseType:
+        'arraybuffer'
+      });
+
+      fs.writeFileSync(
+        speechFile,
+        response.data
+      );
+
+      return res.json({
+        success: true,
+        transcription:
+        userText,
+        answer,
+        audioUrl: `${req.protocol}://${req.get('host')}/uploads/${fileName}`
       });
 
     } catch (err) {
@@ -335,30 +371,32 @@ app.post('/voice/upload',
       const answer = msg.content[0].text;
       console.log(answer);
 
-      const speechFile =
-        `/tmp/${Date.now()}.mp3`;
+      const uploadsPath = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsPath)) {
+        fs.mkdirSync(uploadsPath);
+      }
 
-        const mp3 =
-        await openai.audio.speech.create({
-          model: 'tts-1',
-          voice: 'nova',
-          input: answer
-        });
+      const speechFile = `/tmp/${Date.now()}.mp3`;
 
-        const buffer = Buffer.from(await mp3.arrayBuffer());
+      const mp3 = await openai.audio.speech.create({
+        model: 'tts-1',
+        voice: 'nova',
+        input: answer
+      });
 
-        fs.writeFileSync(
-          speechFile,
-          buffer
-        );
+      const buffer = Buffer.from(await mp3.arrayBuffer());
 
-        return res.json({
-          success: true,
-          transcription: userText,
-          answer,
-          audioUrl:
-        `${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
-        });
+      fs.writeFileSync(
+        speechFile,
+        buffer
+      );
+
+      return res.json({
+        success: true,
+        transcription: userText,
+        answer,
+        audioUrl: `${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
+      });
     } catch (err) {
       console.log(err);
       return res.status(500).json({
