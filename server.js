@@ -367,8 +367,9 @@ app.post('/voice/upload',
           }
         ]
       });
+      const answer = msg?.content?.[0]?.text
 
-      const answer = msg.content[0].text;
+      //const answer = msg.content[0].text;
       console.log(answer);
 
       const uploadsPath = path.join(process.cwd(), 'uploads');
@@ -393,7 +394,7 @@ app.post('/voice/upload',
 
       const fileName = `${Date.now()}.mp3`;
 
-      /*const speechFile = path.join(uploadsPath,fileName);
+      const speechFile = path.join(uploadsPath,fileName);
       try {
         const response = await axios({
           method: 'POST',
@@ -433,13 +434,13 @@ app.post('/voice/upload',
           answer,
           audioUrl: `${req.protocol}://${req.get('host')}/uploads/${fileName}`
         });
-      }*/
+      }
 
       return res.json({
         success: true,
         transcription: userText,
-        answer,
-        //audioUrl: `${req.protocol}://${req.get('host')}/${speechFile.replace('/uploads/', '')}`
+        answer:answer,
+        audioUrl: `${req.protocol}://${req.get('host')}/${speechFile.replace('/uploads/', '')}`
       });
     } catch (err) {
       console.log(err);
