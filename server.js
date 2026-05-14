@@ -79,7 +79,7 @@ async function getDollarRate() {
       `;
   }
   catch (err) {
-    console.log(err);
+    console.log('ERRO:',err);
     return 'Erro cotação dólar';
   }
 }
@@ -96,7 +96,7 @@ async function getWeather() {
       ${weather.windspeed} km/h
     `;
       } catch (err) {
-        console.log(err);
+        console.log('ERRO:',err);
         return 'Erro clima';
       }
     }
@@ -108,7 +108,7 @@ async function getAgroInfo(text) {
     );
     return result;
   } catch (err) {
-    console.log(err);
+    console.log('ERRO:',err);
     return 'Erro agro';
   }
 }
@@ -121,7 +121,7 @@ async function getTrafficInfo(text) {
     );
     return result;
   } catch (err) {
-    console.log(err);
+    console.log('ERRO:',err);
     return 'Erro trânsito';
   }
 }
@@ -158,7 +158,7 @@ async function searchWeb(query) {
     return result;
 
   } catch (err) {
-    console.log(err);
+    console.log('ERRO:',err);
     return 'Erro busca web';
   }
 }
@@ -233,7 +233,7 @@ app.post('/voice/text',
           }
         ]
       });
-      console.log('msg',msg);
+      console.log('MENSAGEM',msg);
       const answer = msg.content[0].text;
 
       /*const speechFile = `/tmp/${Date.now()}.mp3`;
@@ -291,7 +291,7 @@ app.post('/voice/text',
       });
 
     } catch (err) {
-      console.log(err);
+      console.log('ERRO:',err);
       return res.status(500).json({
         error: err.message
       });
@@ -367,10 +367,10 @@ app.post('/voice/upload',
           }
         ]
       });
-      const answer = msg?.content?.[0]?.text
+      //const answer = msg?.content?.[0]?.text
 
-      //const answer = msg.content[0].text;
-      console.log(answer);
+      const answer = msg.content[0].text;
+      console.log('ANSWER:',answer);
 
       const uploadsPath = path.join(process.cwd(), 'uploads');
       if (!fs.existsSync(uploadsPath)) {
@@ -424,9 +424,9 @@ app.post('/voice/upload',
           response.data
         );
       } catch (err) {
-        console.log(err);      
+        console.log('ERRO:',err);      
       }finally{
-        console.log('answer',answer);
+        console.log('ENVIOU A RESPOSTA ANSWER:',answer);
         return res.json({
           success: true,
           transcription:
@@ -443,7 +443,7 @@ app.post('/voice/upload',
         audioUrl: `${req.protocol}://${req.get('host')}/${speechFile.replace('/uploads/', '')}`
       });
     } catch (err) {
-      console.log(err);
+      console.log('ERRO:',err);
       return res.status(500).json({
         error: 'Erro upload 7'
       });
