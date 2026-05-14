@@ -29,7 +29,7 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVEN_API_KEY
 });
 
-function buscaClaude(userText){
+async function buscaClaude(userText){
   const intent = detectIntent(userText);
   console.log(intent);
   let webContext = '';
@@ -87,7 +87,7 @@ function buscaClaude(userText){
       }
     ]
   });
-  return msg;
+  return msg.content[0].text;
 }
 
 function detectIntent(text) {
@@ -259,18 +259,16 @@ app.post('/voice/text',
         question
       } = req.body;
 
-      const msg = buscaClaude(question);
-      const answer = msg.content[0].text;
+      const msg = await buscaClaude(question);
+      console.log(msg);
+      const answer = msg;
       console.log('SÓ O ANSWER:',answer);
 
-      const fileName = `${Date.now()}.mp3`;
-      const speechFile = `/tmp/${Date.now()}.mp3`;
       /********************************************* */
       let audioUrl = '';
       let userText = '';
       /************************************ */
         try {
-          const fileName = `${Date.now()}.mp3`;
           const uploadsPath = path.join(process.cwd(), 'uploads');
           if (!fs.existsSync(uploadsPath)) {
             fs.mkdirSync(uploadsPath);
