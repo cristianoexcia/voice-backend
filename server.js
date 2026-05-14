@@ -5,9 +5,8 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
-
-
 import userRoutes from './routes/users.js'
+import { ElevenLabsClient} from '@elevenlabs/elevenlabs-js';
 
 dotenv.config()
 
@@ -23,33 +22,92 @@ const openai = new OpenAI({
 });
 
 const anthropic = new Anthropic({
-
-  apiKey:
-  process.env.ANTHROPIC_API_KEY
+  apiKey: process.env.ANTHROPIC_API_KEY
 });
+
+const elevenlabs = new ElevenLabsClient({
+  apiKey: process.env.ELEVEN_API_KEY
+});
+
+function buscaClaude(userText){
+  const intent = detectIntent(userText);
+  console.log(intent);
+  let webContext = '';
+  if (intent === 'finance') {
+    webContext = await getDollarRate();
+  }
+  else if (
+    intent === 'weather'
+  ) {
+    webContext = await getWeather();
+  }    
+  else if (
+    intent === 'agro'
+  ) {
+    webContext = await getAgroInfo(userText);
+  }
+  else if (
+    intent === 'traffic'
+  ) {
+    webContext = await getTrafficInfo(userText);
+  }
+  else {
+    webContext = await searchWeb(userText);
+  }
+
+  const msg =  await anthropic.messages.create({
+    model:'claude-sonnet-4-6',
+    max_tokens: 500,
+    messages: [
+      {
+        role: 'user',
+        content:
+        `
+        Você é um assistente de voz inteligente especializado em:
+
+        - agronegócio
+        - clima
+        - trânsito
+        - logística
+        - informações gerais
+
+        Pergunta do usuário:
+        ${userText}
+
+        Contexto:
+        ${webContext}
+
+        INSTRUÇÕES:
+        - Responda em português do Brasil
+        - Seja natural
+        - Seja útil
+        - Não diga para pesquisar no Google
+        - Responda como um assistente de voz moderno
+        `
+      }
+    ]
+  });
+  return msg;
+}
 
 function detectIntent(text) {
   const lower = text.toLowerCase();
-  if (
-    lower.includes('dólar') ||
+  if (lower.includes('dólar') ||
     lower.includes('dolar') ||
     lower.includes('euro') ||
     lower.includes('cotação') ||
     lower.includes('cotacao')) {
-
     return 'finance';
   }
 
-  if (
-    lower.includes('clima') ||
+  if (lower.includes('clima') ||
     lower.includes('temperatura') ||
     lower.includes('chuva') ||
     lower.includes('tempo')) {
     return 'weather';
   }
 
-  if (
-    lower.includes('soja') ||
+  if (lower.includes('soja') ||
     lower.includes('milho') ||
     lower.includes('boi') ||
     lower.includes('gado') ||
@@ -58,8 +116,7 @@ function detectIntent(text) {
     return 'agro';
   }
 
-  if (
-    lower.includes('trânsito') ||
+  if (lower.includes('trânsito') ||
     lower.includes('transito') ||
     lower.includes('rodovia') ||
     lower.includes('BR') ||
@@ -67,7 +124,9 @@ function detectIntent(text) {
     lower.includes('acidente')) {
     return 'traffic';
   }
-  return 'general';
+  else{
+      return 'general';
+  }
 }
 
 async function getDollarRate() {
@@ -200,40 +259,7 @@ app.post('/voice/text',
         question
       } = req.body;
 
-      const intent = detectIntent(question);
-      let webContext = '';
-      if (intent === 'finance') {
-        webContext = await getDollarRate();
-      }
-
-      else if (intent === 'weather') {
-        webContext =
-        await getWeather();
-      }
-      else {
-        webContext = await searchWeb(question);
-      }
-
-      const msg = await anthropic.messages.create({
-        model:'claude-sonnet-4-6',
-        max_tokens: 500,
-        messages: [
-          {
-            role: 'user',
-            content:
-            `
-            Pergunta:
-            ${question}
-
-            Contexto:
-            ${webContext}
-
-            Responda em português.
-            `
-          }
-        ]
-      });
-      console.log('MENSAGEM:',msg);
+      const msg = buscaClaude(question);
       const answer = msg.content[0].text;
       console.log('SÓ O ANSWER:',answer);
 
@@ -242,29 +268,42 @@ app.post('/voice/text',
       /********************************************* */
       let audioUrl = '';
       let userText = '';
-      /*try {
-        const response = await axios({
-          method: 'POST',
-          url:'https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb',
-          headers: {
-            'xi-api-key': process.env.ELEVEN_API_KEY,
-            'Content-Type':'application/json'
-          },
-          data: {
-            text: answer,
-            model_id:'eleven_multilingual_v2'
-          },
-          responseType:'arraybuffer'
-        });
+      /************************************ */
+        try {
+          const fileName = `${Date.now()}.mp3`;
+          const uploadsPath = path.join(process.cwd(), 'uploads');
+          if (!fs.existsSync(uploadsPath)) {
+            fs.mkdirSync(uploadsPath);
+          }
+          const fileName = `${Date.now()}.mp3`;
+          const speechFile = path.join(uploadsPath, fileName);
+          const audio = await elevenlabs.textToSpeech.convert(
+            'JBFqnCBsd6RMkjVDRZzb',
+            {
+              text: answer,
+              modelId:'eleven_multilingual_v2',
+              outputFormat:'mp3_44100_128'
+            }
+          );
 
-        fs.writeFileSync(
-          speechFile,
-          response.data
-        );
-        audioUrl =  `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
-      } catch (err) {
-        console.log('ERRO ELEVENLABS:', err.response?.data || err.message );
-      }*/
+          const chunks = [];
+          for await (
+            const chunk of audio
+          ) {
+            chunks.push(chunk);
+          }
+
+          const audioBuffer = Buffer.concat(chunks);
+
+          fs.writeFileSync(
+            speechFile,
+            audioBuffer
+          );
+          audioUrl = `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
+        } catch (err) {
+          console.log('ERRO ELEVEN:',err.message );
+        }
+      //************************************************************ */
       return res.json({
         success: true,
         transcription: userText,
@@ -292,63 +331,7 @@ app.post('/voice/upload',
       });
       console.log('transcrição',transcription.text);  
       const userText = transcription.text;
-      const intent = detectIntent(userText);
-      console.log(intent);
-      let webContext = '';
-      if (intent === 'finance') {
-        webContext = await getDollarRate();
-      }
-      else if (
-        intent === 'weather'
-      ) {
-        webContext = await getWeather();
-      }    
-      else if (
-        intent === 'agro'
-      ) {
-        webContext = await getAgroInfo(userText);
-      }
-      else if (
-        intent === 'traffic'
-      ) {
-        webContext = await getTrafficInfo(userText);
-      }
-      else {
-        webContext = await searchWeb(userText);
-      }
-
-      const msg =  await anthropic.messages.create({
-        model:'claude-sonnet-4-6',
-        max_tokens: 500,
-        messages: [
-          {
-            role: 'user',
-            content:
-            `
-            Você é um assistente de voz inteligente especializado em:
-
-            - agronegócio
-            - clima
-            - trânsito
-            - logística
-            - informações gerais
-
-            Pergunta do usuário:
-            ${userText}
-
-            Contexto:
-            ${webContext}
-
-            INSTRUÇÕES:
-            - Responda em português do Brasil
-            - Seja natural
-            - Seja útil
-            - Não diga para pesquisar no Google
-            - Responda como um assistente de voz moderno
-            `
-          }
-        ]
-      });
+      const msg = buscaClaude(userText);
       const answer = msg.content[0].text;
       console.log('ANSWER:',answer);
 
