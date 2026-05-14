@@ -377,24 +377,11 @@ app.post('/voice/upload',
         fs.mkdirSync(uploadsPath);
       }
 
-      /*const speechFile = `/uploads/${Date.now()}.mp3`;
-
-      const mp3 = await openai.audio.speech.create({
-        model: 'tts-1',
-        voice: 'nova',
-        input: answer
-      });
-
-      const buffer = Buffer.from(await mp3.arrayBuffer());
-
-      fs.writeFileSync(
-        speechFile,
-        buffer
-      );*/
-
       const fileName = `${Date.now()}.mp3`;
 
       const speechFile = path.join(uploadsPath,fileName);
+      /********************************************* */ 
+      let audioUrl = '';
       try {
         const response = await axios({
           method: 'POST',
@@ -405,15 +392,10 @@ app.post('/voice/upload',
             'Content-Type':
             'application/json'
           },
-
           data: {
             text: answer,
             model_id:
-            'eleven_multilingual_v2',
-            voice_settings: {
-              stability: 0.5,
-              similarity_boost: 0.8
-            }
+            'eleven_multilingual_v2'
           },
           responseType:
           'arraybuffer'
@@ -423,25 +405,21 @@ app.post('/voice/upload',
           speechFile,
           response.data
         );
+        audioUrl =  `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
       } catch (err) {
-        console.log('ERRO:',err);      
-      }finally{
-        console.log('ENVIOU A RESPOSTA ANSWER:',answer);
-        return res.json({
-          success: true,
-          transcription:
-          userText,
-          answer,
-          audioUrl: `${req.protocol}://${req.get('host')}/uploads/${fileName}`
-        });
-      }
-
+        console.log(
+          'ERRO ELEVENLABS:',
+          err.response?.data ||
+          err.message
+        );
+      }      
+      /********************************************** */
       return res.json({
         success: true,
         transcription: userText,
-        answer:answer,
-        audioUrl: `${req.protocol}://${req.get('host')}/${speechFile.replace('/uploads/', '')}`
-      });
+        answer,
+        audioUrl
+      });      
     } catch (err) {
       console.log('ERRO:',err);
       return res.status(500).json({
