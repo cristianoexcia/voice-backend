@@ -241,7 +241,8 @@ app.post('/voice/text',
       const speechFile = `/tmp/${Date.now()}.mp3`;
       /********************************************* */
       let audioUrl = '';
-      try {
+      let userText = '';
+      /*try {
         const response = await axios({
           method: 'POST',
           url:'https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb',
@@ -263,7 +264,7 @@ app.post('/voice/text',
         audioUrl =  `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
       } catch (err) {
         console.log('ERRO ELEVENLABS:', err.response?.data || err.message );
-      }
+      }*/
       return res.json({
         success: true,
         transcription: userText,
