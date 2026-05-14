@@ -233,9 +233,9 @@ app.post('/voice/text',
           }
         ]
       });
-      console.log('MENSAGEM',msg);
+      console.log('MENSAGEM:',msg);
       const answer = msg.content[0].text;
-
+      console.log('SÓ O ANSWER:',answer);
       /*const speechFile = `/tmp/${Date.now()}.mp3`;
       const mp3 = await openai.audio.speech.create({
         model: 'tts-1',
@@ -382,7 +382,7 @@ app.post('/voice/upload',
       const speechFile = path.join(uploadsPath,fileName);
       /********************************************* */ 
       let audioUrl = '';
-      try {
+      /*try {
         const response = await axios({
           method: 'POST',
           url:'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB',
@@ -412,7 +412,7 @@ app.post('/voice/upload',
           err.response?.data ||
           err.message
         );
-      }      
+      } */     
       /********************************************** */
       return res.json({
         success: true,
