@@ -264,49 +264,9 @@ app.post('/voice/text',
       const answer = msg;
       console.log('SÓ O ANSWER:',answer);
 
-      /********************************************* */
-      let audioUrl = '';
-      let userText = '';
-      /************************************ */
-        try {
-          const uploadsPath = path.join(process.cwd(), 'uploads');
-          if (!fs.existsSync(uploadsPath)) {
-            fs.mkdirSync(uploadsPath);
-          }
-          const fileName = `${Date.now()}.mp3`;
-          const speechFile = path.join(uploadsPath, fileName);
-          const audio = await elevenlabs.textToSpeech.convert(
-            'JBFqnCBsd6RMkjVDRZzb',
-            {
-              text: answer,
-              modelId:'eleven_multilingual_v2',
-              outputFormat:'mp3_44100_128'
-            }
-          );
-
-          const chunks = [];
-          for await (
-            const chunk of audio
-          ) {
-            chunks.push(chunk);
-          }
-
-          const audioBuffer = Buffer.concat(chunks);
-
-          fs.writeFileSync(
-            speechFile,
-            audioBuffer
-          );
-          audioUrl = `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
-        } catch (err) {
-          console.log('ERRO ELEVEN:',err.message );
-        }
-      //************************************************************ */
       return res.json({
         success: true,
-        transcription: userText,
-        answer,
-        audioUrl
+        answer
       });
 
     } catch (err) {
@@ -318,7 +278,7 @@ app.post('/voice/text',
   }
 );
 
-app.post('/voice/upload',
+/*app.post('/voice/upload',
   upload.single('audio'),
   async (req, res) => {
     try {
@@ -347,7 +307,7 @@ app.post('/voice/upload',
       });
     }
   }
-);
+);*/
 
 app.listen(process.env.PORT, () => {
   console.log('Servidor rodando')
