@@ -236,58 +236,39 @@ app.post('/voice/text',
       console.log('MENSAGEM:',msg);
       const answer = msg.content[0].text;
       console.log('SÓ O ANSWER:',answer);
-      /*const speechFile = `/tmp/${Date.now()}.mp3`;
-      const mp3 = await openai.audio.speech.create({
-        model: 'tts-1',
-        voice: 'nova',
-        input: answer
-      });
 
-      const buffer = Buffer.from(await mp3.arrayBuffer());
-
-      fs.writeFileSync(
-        speechFile,
-        buffer
-      );
-      console.log('audiourl',`${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`)
-      return res.json({
-        success: true,
-        answer,
-        audioUrl:`${req.protocol}://${req.get('host')}/${speechFile.replace('/tmp/', '')}`
-      });*/
       const fileName = `${Date.now()}.mp3`;
       const speechFile = `/tmp/${Date.now()}.mp3`;
-      const response = await axios({
-        method: 'POST',
-        url:'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB',
-        headers: {
-          'xi-api-key':process.env.ELEVEN_API_KEY,
-          'Content-Type':
-          'application/json'
-        },
-        data: {
-          text: answer,
-          model_id:'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.8
-          }
-        },
-        responseType:
-        'arraybuffer'
-      });
+      /********************************************* */
+      let audioUrl = '';
+      try {
+        const response = await axios({
+          method: 'POST',
+          url:'https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb',
+          headers: {
+            'xi-api-key': process.env.ELEVEN_API_KEY,
+            'Content-Type':'application/json'
+          },
+          data: {
+            text: answer,
+            model_id:'eleven_multilingual_v2'
+          },
+          responseType:'arraybuffer'
+        });
 
-      fs.writeFileSync(
-        speechFile,
-        response.data
-      );
-
+        fs.writeFileSync(
+          speechFile,
+          response.data
+        );
+        audioUrl =  `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
+      } catch (err) {
+        console.log('ERRO ELEVENLABS:', err.response?.data || err.message );
+      }
       return res.json({
         success: true,
-        transcription:
-        userText,
+        transcription: userText,
         answer,
-        audioUrl: `${req.protocol}://${req.get('host')}//tmp/${fileName}`
+        audioUrl
       });
 
     } catch (err) {
@@ -367,8 +348,6 @@ app.post('/voice/upload',
           }
         ]
       });
-      //const answer = msg?.content?.[0]?.text
-
       const answer = msg.content[0].text;
       console.log('ANSWER:',answer);
 
@@ -376,50 +355,9 @@ app.post('/voice/upload',
       if (!fs.existsSync(uploadsPath)) {
         fs.mkdirSync(uploadsPath);
       }
-
       const fileName = `${Date.now()}.mp3`;
-
       const speechFile = path.join(uploadsPath,fileName);
-      /********************************************* */ 
-      let audioUrl = '';
-      /*try {
-        const response = await axios({
-          method: 'POST',
-          url:'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB',
-          headers: {
-            'xi-api-key':
-            process.env.ELEVEN_API_KEY,
-            'Content-Type':
-            'application/json'
-          },
-          data: {
-            text: answer,
-            model_id:
-            'eleven_multilingual_v2'
-          },
-          responseType:
-          'arraybuffer'
-        });
-
-        fs.writeFileSync(
-          speechFile,
-          response.data
-        );
-        audioUrl =  `${req.protocol}://${req.get('host')}/uploads/${fileName}`;
-      } catch (err) {
-        console.log(
-          'ERRO ELEVENLABS:',
-          err.response?.data ||
-          err.message
-        );
-      } */     
-      /********************************************** */
-      return res.json({
-        success: true,
-        transcription: userText,
-        answer,
-        audioUrl
-      });      
+     
     } catch (err) {
       console.log('ERRO:',err);
       return res.status(500).json({
