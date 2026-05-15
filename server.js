@@ -39,7 +39,7 @@ async function buscaClaude(userText){
   else if (
     intent === 'weather'
   ) {
-    webContext = await getWeather();
+    webContext = await getWeather(latitude, longitude);
   }    
   else if (
     intent === 'agro'
@@ -143,9 +143,9 @@ async function getDollarRate() {
   }
 }
 
-async function getWeather() {
+async function getWeather(latitude, longitude) {
   try {
-    const response = await axios.get('https://api.open-meteo.com/v1/forecast?latitude=-26.91&longitude=-48.66&current_weather=true');
+    const response = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
     const weather = response.data.current_weather;
     return `
       Temperatura atual:
@@ -154,11 +154,12 @@ async function getWeather() {
       Vento:
       ${weather.windspeed} km/h
     `;
-      } catch (err) {
-        console.log('ERRO:',err);
-        return 'Erro clima';
-      }
-    }
+  } 
+  catch (err) {
+    console.log('ERRO:',err);
+    return 'Erro clima';
+  }
+}
 
 async function getAgroInfo(text) {
   try {
@@ -256,7 +257,9 @@ app.post('/voice/text',
   async (req, res) => {
     try {
       const {
-        question
+        question,
+        latitude,
+        longitude
       } = req.body;
 
       const msg = await buscaClaude(question);
@@ -278,36 +281,6 @@ app.post('/voice/text',
   }
 );
 
-/*app.post('/voice/upload',
-  upload.single('audio'),
-  async (req, res) => {
-    try {
-      console.log('file:',req.file);
-      const transcription =  await openai.audio.transcriptions.create({
-        file: fs.createReadStream(req.file.path),
-        model: 'whisper-1'
-      });
-      console.log('transcrição',transcription.text);  
-      const userText = transcription.text;
-      const msg = buscaClaude(userText);
-      const answer = msg.content[0].text;
-      console.log('ANSWER:',answer);
-
-      const uploadsPath = path.join(process.cwd(), 'uploads');
-      if (!fs.existsSync(uploadsPath)) {
-        fs.mkdirSync(uploadsPath);
-      }
-      const fileName = `${Date.now()}.mp3`;
-      const speechFile = path.join(uploadsPath,fileName);
-     
-    } catch (err) {
-      console.log('ERRO:',err);
-      return res.status(500).json({
-        error: 'Erro upload 7'
-      });
-    }
-  }
-);*/
 
 app.listen(process.env.PORT, () => {
   console.log('Servidor rodando')
