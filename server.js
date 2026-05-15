@@ -29,9 +29,11 @@ const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVEN_API_KEY
 });
 
-async function buscaClaude(userText){
+async function buscaClaude(userText,latitude,longitude){
   const intent = detectIntent(userText);
   console.log(intent);
+  console.log(latitude);
+  console.log(longitude);
   let webContext = '';
   if (intent === 'finance') {
     webContext = await getDollarRate();
@@ -262,7 +264,7 @@ app.post('/voice/text',
         longitude
       } = req.body;
 
-      const msg = await buscaClaude(question);
+      const msg = await buscaClaude(question,latitude,longitude);
       console.log(msg);
       const answer = msg;
       console.log('SÓ O ANSWER:',answer);
